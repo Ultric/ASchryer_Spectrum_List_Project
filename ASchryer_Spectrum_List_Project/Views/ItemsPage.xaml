@@ -1,0 +1,105 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:d="http://xamarin.com/schemas/2014/forms/design"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d"
+             x:Class="ASchryer_Spectrum_List_Project.Views.ItemsPage"
+             Title="{Binding Title}"
+             xmlns:local="clr-namespace:ASchryer_Spectrum_List_Project.ViewModels"  
+             xmlns:model="clr-namespace:ASchryer_Spectrum_List_Project.Models"
+             xmlns:converter="clr-namespace:ASchryer_Spectrum_List_Project.Converters"
+             xmlns:behavior="clr-namespace:ASchryer_Spectrum_List_Project.Behaviors"
+             xmlns:component="clr-namespace:ASchryer_Spectrum_List_Project.Components"
+             x:Name="BrowseItemsPage">
+
+    <ContentPage.Resources>
+        <ResourceDictionary>
+            <converter:GenderToBorderColorConverter x:Key="genderToBorderColor"/>
+        </ResourceDictionary>
+    </ContentPage.Resources>
+
+    <StackLayout  x:DataType="local:ItemsViewModel">
+
+        <Label Text="Contacts"
+               TextColor="White" BackgroundColor="Navy"
+               FontAttributes="Bold" 
+               HeightRequest="60"
+               HorizontalOptions="FillAndExpand" VerticalOptions="CenterAndExpand"
+               Padding="15,30,5,5" />
+
+        <component:CustomSearchBar x:Name="SearchBar"
+                                   Margin="5"
+                                   TextChanged="SearchBar_TextChanged"
+                                   Placeholder="Search contacts..."
+                                   ClearButtonVisibility="WhileEditing">
+            <component:CustomSearchBar.Behaviors>
+                <behavior:NoNumbersSearchBarBehavior/>
+            </component:CustomSearchBar.Behaviors>
+        </component:CustomSearchBar>
+
+        <!--
+        Unfortunately, partway through development, the API I've used for a couple years now started acting significantly more unstable.
+        Please pull-to-refresh in the event there is no data.
+        -->
+        <RefreshView Command="{Binding LoadItemsCommand}" IsRefreshing="{Binding IsBusy, Mode=TwoWay}">
+            <CollectionView x:Name="ItemsListView"
+                            ItemsSource="{Binding ContactList}"
+                            ItemSizingStrategy="MeasureAllItems"
+                            SelectionMode="Single"
+                            SelectionChanged="ItemsListView_SelectionChanged">
+                <CollectionView.ItemsLayout>
+                    <GridItemsLayout Orientation="Vertical" Span="2" VerticalItemSpacing="10" HorizontalItemSpacing="10"/>
+                </CollectionView.ItemsLayout>
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <ContentView Margin="15" x:DataType="model:Contact">
+                            <RelativeLayout>
+                                <!-- BackgroundColor will indicate gender using converter -->
+                                <Frame x:Name="photoFrame"
+                                       CornerRadius="64"
+                                       HeightRequest="128"
+                                       WidthRequest="128"
+                                       Padding="0"
+                                       BackgroundColor="{Binding gender, Converter={StaticResource genderToBorderColor}}"
+                                       HorizontalOptions="Center"
+                                       VerticalOptions="Center"
+                                       RelativeLayout.XConstraint="{ConstraintExpression Type=RelativeToParent, Property=Width, Factor=0.5, Constant=-64}">
+                                    <Frame Margin="5" Padding="0" CornerRadius="64" IsClippedToBounds="True">
+                                        <Image Source="{Binding pictureLargeString}"
+                                               d:Source="https://i.imgur.com/PPU8o7X.jpg"
+                                               HeightRequest="128"
+                                               WidthRequest="128"
+                                               HorizontalOptions="Center"
+                                               VerticalOptions="Center" />
+                                    </Frame>
+                                </Frame>
+                                <!--Not a fan of how this looks, but I was taking too much time trying to make it look good. Not a designer.-->
+                                <StackLayout BackgroundColor="LightGray"
+                                             HorizontalOptions="StartAndExpand"
+                                             RelativeLayout.XConstraint="{ConstraintExpression Type=RelativeToView, ElementName=photoFrame, Property=X, Constant=-10}"
+                                             RelativeLayout.YConstraint="{ConstraintExpression Type=RelativeToView, ElementName=photoFrame, Property=Height, Constant=-50}">
+                                    <!--Name Labels, was considering doing an outline effect but was cut for time-->
+                                    <Label Text="{Binding name.first}" d:Text="Zachariah" TextColor="DarkGreen" />
+                                    <Label Text="{Binding name.last}" d:Text="Gotakindalongname" TextColor="Black" />
+                                </StackLayout>
+                            </RelativeLayout>
+                        </ContentView>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+                <!--
+                Had an issue with the API not being stable, fixed it by just sending the request a couple times (at least in my testing)
+                Decided to leave this in here to show I basically know what to do if there's no data visible. I just didn't like
+                it showing up while it was loading. I can fix that as well, it's just...time.
+                -->
+                <!--
+                <CollectionView.EmptyView>
+                    <ContentView Padding="30">
+                        <Label Text="API may have encountered an error.&#10;Please pull to refresh if this remains empty." HorizontalOptions="CenterAndExpand" VerticalOptions="Center" />
+                    </ContentView>
+                </CollectionView.EmptyView>
+                -->
+            </CollectionView>
+        </RefreshView>
+    </StackLayout>
+</ContentPage>
